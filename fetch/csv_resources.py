@@ -39,7 +39,7 @@ def main(overwrite, show_progress, *args, **kwargs):
         parsed_url = urlparse.urlparse(url)
         path = parsed_url.path
         scheme = parsed_url.scheme
-        
+
         # Duck out of this routine if the call won't complete or fetch data
         if path == '':
             log_skip("Looks like a home page", resource_id)
@@ -52,7 +52,7 @@ def main(overwrite, show_progress, *args, **kwargs):
         src_file_name = path.split('/')[-1]
         dest_file_name = resource_id + '-' + src_file_name
         dest_path = os.path.join(DATA_DIRECTORY, dest_file_name)
- 
+
         if not overwrite and os.path.exists(dest_path):
             log_skip("Data file has already been downloaded.", resource_id)
             continue
@@ -63,6 +63,9 @@ def main(overwrite, show_progress, *args, **kwargs):
             resp = requests.get(url, stream=True, timeout=REQUEST_TIMEOUT)
         except requests.exceptions.Timeout:
             log_skip("Request timed out when trying to reach server.", resource_id)
+            continue
+        except (requests.exceptions.SSLError, requests.exceptions.ConnectionError) as e:
+            log_skip("Request error (%s)" % e, resource_id)
             continue
 
         # Stream data to file
