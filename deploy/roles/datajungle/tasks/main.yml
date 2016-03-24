@@ -1,0 +1,37 @@
+---
+- name: Install server software
+  apt: name={{ item }} update_cache=yes
+  with_items:
+  - git
+  - python-pip
+  - python-boto
+  - python-dev
+  - trickle  # for rate-limiting requests
+  tags: systempkgs
+  become: true
+
+- name: Create project directory
+  file: state=directory path={{ projectdir }} owner={{ ansible_ssh_user }}
+
+- name: Create data directory
+  file: state=directory path={{ code_data }} owner={{ ansible_ssh_user }}
+
+- name: Install virtualenv
+  pip: name=virtualenv
+  become: true
+
+- name: Transfer Python dependencies list
+  copy: src={{ appname }}-reqs.txt dest={{ projectdir }}
+  tags: pythonpkgs
+
+- name: Install server Python dependencies
+  pip: requirements={{ projectdir }}/{{ appname }}-reqs.txt virtualenv={{ venv }}
+  tags: pythonpkgs
+
+- name: Checkout source code
+  git: repo={{ repo }} dest={{ src }} force=yes recursive=yes
+  tags: updatecode
+
+- name: Fetch PostgreSQL configuration
+  s3: bucket={{ privatebucket }} object={{ postgres_config }} dest={{ src }}/{{ postgres_config }} mode=get
+      aws_access_key={{ aws_access_key_id }} aws_secret_key={{ aws_secret_access_key }}

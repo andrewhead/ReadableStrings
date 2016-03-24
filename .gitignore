@@ -73,3 +73,6 @@ venv
 # Text editor swap files
 .*.swp
 .*.swo
+
+# Local data files
+data

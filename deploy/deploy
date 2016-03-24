@@ -1,0 +1,4 @@
+#! /bin/bash
+ansible-playbook -i hosts main.yml --ask-become-pass $@\
+  --extra-vars "@aws-credentials.json"\
+  --extra-vars "@postgres-credentials.json"

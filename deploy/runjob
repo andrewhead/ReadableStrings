@@ -1,0 +1,26 @@
+#! /bin/bash
+
+JOB_NAME=$1
+JOBS_DIR=jobs
+JOB_OPTIONS=$(ls $JOBS_DIR/*.yml | sed "s/$JOBS_DIR\///" | sed 's/\.yml//')
+
+# Check that the requested job is actually an option
+echo $JOB_OPTIONS | egrep "(^|\s+)$JOB_NAME(\s+|$)" 2>&1 > /dev/null
+if [[ $? -ne 0 ]] && ! [[ "$JOB_NAME" =~ "^\s*$" ]]
+then
+  echo "Invalid job name ($JOB_NAME)!"
+  echo "Please pick one of the following:"
+  for job in $JOB_OPTIONS
+  do
+    echo "* $job"
+  done
+  exit -1
+fi
+
+# Run the playbook for the job
+(
+  cd $JOBS_DIR &&\
+  ansible-playbook -i ../hosts\
+    --extra-vars "@../aws-credentials.json"\
+    $JOB_NAME.yml
+)

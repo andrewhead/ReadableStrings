@@ -1,0 +1,94 @@
+---
+- name: Install server software
+  apt: name={{ item }} update_cache=yes
+  with_items:
+  - postgresql
+  - postgresql-client
+  - libpq-dev
+  - python-psycopg2
+  tags: systempkgs
+  become: true
+
+- name: Create postgres group
+  group: name=postgres 
+  become: true
+
+- name: Create postgres user
+  user: name=postgres group=postgres
+  become: true
+
+- name: Create project directory
+  file: state=directory path={{ projectdir }} owner={{ ansible_user }}
+  become: true
+
+- name: Create postgres directory
+  file: state=directory path={{ postgresdir }} owner=postgres mode=0700
+  become: true
+
+- name: Create data directory
+  file: state=directory path={{ datadir }} owner=postgres mode=0700
+  become: true
+
+- name: Collect cluster names
+  command: pg_lsclusters
+  register: clusters
+  tags: postgres
+
+# Note: the following is okay to do only if there isn't already a default database on the machine!
+- name: Drop the default database
+  command: pg_dropcluster --stop {{ postgres_version }} main
+  become: true
+  when: clusters.stdout | search("\n{{ postgres_version }}\s+main\s+{{ postgres_port }}")
+  tags: postgres
+
+- name: Create PostgreSQL database cluster
+  command: pg_createcluster {{ postgres_version }} {{ appname }} -d {{ datadir }} -p {{ postgres_port }} -u postgres --start-conf auto
+  when: not clusters.stdout | search("\n{{ postgres_version }}\s+{{ appname }}\s+{{ postgres_port }}")
+  become_user: postgres
+  become: true
+  tags: postgres
+
+- name: Get cluster status
+  command: pg_lsclusters
+  register: clusters
+  tags: postgres
+
+- name: Configure database cluster
+  template: src=postgresql.j2 dest=/etc/postgresql/{{ postgres_version }}/{{ appname }}/postgresql.conf
+  become: true
+  tags: configure
+
+- name: Configure database cluster access
+  template: src=pg_hba.j2 dest=/etc/postgresql/{{ postgres_version }}/{{ appname }}/pg_hba.conf
+  become: true
+  tags: configure
+
+- name: Start the cluster
+  command: pg_ctlcluster {{ postgres_version }} {{ appname }} start
+  become_user: postgres
+  become: true
+  when: not clusters.stdout | search("\n{{ postgres_version }}\s+{{ appname }}\s+{{ postgres_port }}\s+online")
+  tags: postgres
+
+- name: Create database
+  postgresql_db: name={{ appname }} port={{ postgres_port }}
+  become_user: postgres
+  become: true
+  tags: db_setup
+
+- name: Add application user to database
+  postgresql_user: db={{ appname }} name={{ dbusername }} password={{ dbpassword }} port={{ postgres_port }}
+  become_user: postgres
+  become: true
+  tags: db_setup
+
+- name: Assign user privileges
+  postgresql_privs: >
+    database={{ appname }}
+    priv=CREATE
+    type=database
+    role={{ appname }}
+    port={{ postgres_port }}
+  become_user: postgres
+  become: true
+  tags: db_setup

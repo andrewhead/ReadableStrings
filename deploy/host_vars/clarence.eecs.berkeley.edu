@@ -1,0 +1,12 @@
+appname: datajungle
+projectdir: /home/{{ ansible_user }}/drive/{{ appname }}
+repo: https://github.com/andrewhead/ReadableStrings.git
+privatebucket: datajungle
+postgres_config: postgres-config.json
+logfile: /var/log/{{ appname }}.log
+postgres_port: 5433
+postgres_version: 9.3
+venv: "{{ projectdir }}/venv"
+src: "{{ projectdir }}/src"
+code_data: "{{ projectdir }}/data"
+long_time: 31536000  # one year in seconds

@@ -1,0 +1,25 @@
+---
+# By using trickle, we limit the download rate to 2MB/s when downloading
+# gigabytes of CSV data over the school network.  We also run it in
+# standalone mode ("-s" flag), because otherwise the Postgres driver crashes.
+- name: Download open CSV resources
+  shell: >
+    trickle
+    -s
+    -d 2000
+    {{ projectdir }}/venv/bin/python
+    data.py
+    fetch
+    csv_resources
+    --db postgres
+    --db-config {{ src }}/{{ postgres_config }}
+    chdir={{ src }}
+  async: "{{ long_time }}"
+  poll: 0
+  register: fetcher_sleeper
+
+- name: Fail if job already exited.  If failure, this job may already be running.
+  async_status: jid={{ fetcher_sleeper.ansible_job_id }}
+  register: job_result
+  failed_when: job_result.finished
+  retries: 1

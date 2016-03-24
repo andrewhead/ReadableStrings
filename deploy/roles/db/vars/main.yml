@@ -1,0 +1,2 @@
+postgresdir: "{{ projectdir }}/postgres"
+datadir: "{{ postgresdir }}/data"
