@@ -7,7 +7,7 @@ import datetime
 import json
 import copy
 from peewee import Model, SqliteDatabase, Proxy, PostgresqlDatabase, \
-    CharField, IntegerField, ForeignKeyField, DateTimeField
+    CharField, IntegerField, ForeignKeyField, DateTimeField, TextField
 
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -104,7 +104,7 @@ class Resource(ProxyModel):
 
     dataset = ForeignKeyField(Dataset)
     format = CharField()
-    url = CharField()
+    url = TextField()
 
     # This is the ID of the 'id' of the resource fetched
     resource_id = CharField(max_length=36, index=True)

@@ -24,6 +24,7 @@ DEFAULT_PARAMS = {
 }
 REQUEST_DELAY = 0.5  # set low as there will already be a delay from response latency
 LOCK_FILENAME = '/tmp/resource-links-fetcher.lock'
+MAX_CHARFIELD_LENGTH = 255
 
 
 @lock_method(LOCK_FILENAME)
@@ -69,8 +70,8 @@ def main(show_progress, *args, **kwargs):
 
             dataset_record = Dataset.create(
                 dataset_id=dataset['id'],
-                title=dataset['title'],
-                license_title=dataset['license_title'],
+                title=dataset['title'][:MAX_CHARFIELD_LENGTH],
+                license_title=dataset['license_title'][:MAX_CHARFIELD_LENGTH],
                 fetch_index=fetch_index,
             )
 
