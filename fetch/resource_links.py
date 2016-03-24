@@ -95,7 +95,5 @@ def configure_parser(parser):
     parser.add_argument(
         '--show-progress',
         action='store_true',
-        help="Show progress in loading content from the file. " +
-        "Note that this may slow down execution as the program will have " +
-        "to count the amount of the file that is being read."
+        help="Show progress of how many resources have been fetched."
     )

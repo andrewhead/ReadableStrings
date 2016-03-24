@@ -6,7 +6,7 @@ import logging
 import argparse
 
 from models import create_tables, init_database
-from fetch import resource_links
+from fetch import resource_links, csv_resources
 
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -14,7 +14,7 @@ COMMANDS = {
     'fetch': {
         'description': "Fetch data from the web.",
         'module_help': "Type of data to fetch.",
-        'modules': [resource_links],
+        'modules': [resource_links, csv_resources],
     },
 }
 
