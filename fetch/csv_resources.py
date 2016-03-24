@@ -14,6 +14,8 @@ from lock import lock_method
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 LOCK_FILENAME = '/tmp/resource-links-fetcher.lock'
+STREAM_CHUNK_SIZE = 1024
+REQUEST_TIMEOUT = 5
 DATA_DIRECTORY = 'data'
 if not os.path.exists(DATA_DIRECTORY):
     os.mkdir(DATA_DIRECTORY)
@@ -57,12 +59,21 @@ def main(overwrite, show_progress, *args, **kwargs):
 
         # Fetch code is inspired by that on Stack Overflow:
         # http://stackoverflow.com/questions/22676/how-do-i-download-a-file-over-http-using-python#answer-10744565
-        resp = requests.get(url, stream=True)
+        try:
+            resp = requests.get(url, stream=True, timeout=REQUEST_TIMEOUT)
+        except requests.exceptions.Timeout:
+            log_skip("Request timed out when trying to reach server.", resource_id)
+            continue
 
         # Stream data to file
         progress_desc = "Downloading resource %d / %d" % (resource_index, resource_count)
+        iterator = tqdm(
+            resp.iter_content(chunk_size=STREAM_CHUNK_SIZE),
+            disable=(not show_progress),
+            desc=progress_desc
+        )
         with open(dest_path, 'wb') as dest_file:
-            for block in tqdm(resp.iter_content(), disable=(not show_progress), desc=progress_desc):
+            for block in iterator:
                 dest_file.write(block)
 
 
