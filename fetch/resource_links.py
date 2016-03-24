@@ -24,7 +24,15 @@ DEFAULT_PARAMS = {
 }
 REQUEST_DELAY = 0.5  # set low as there will already be a delay from response latency
 LOCK_FILENAME = '/tmp/resource-links-fetcher.lock'
-MAX_CHARFIELD_LENGTH = 255
+
+
+def trim_char_data(string):
+    # With Peewee, Postgres can only accept character fields up to 255 characters in length.
+    # This routine trims character data so it can be stored in Postgres.
+    MAX_CHARFIELD_LENGTH = 255
+    if string is None:
+        return string
+    return string[:MAX_CHARFIELD_LENGTH]
 
 
 @lock_method(LOCK_FILENAME)
@@ -70,8 +78,8 @@ def main(show_progress, *args, **kwargs):
 
             dataset_record = Dataset.create(
                 dataset_id=dataset['id'],
-                title=dataset['title'][:MAX_CHARFIELD_LENGTH],
-                license_title=dataset['license_title'][:MAX_CHARFIELD_LENGTH],
+                title=trim_char_data(dataset['title']),
+                license_title=trim_char_data(['license_title']),
                 fetch_index=fetch_index,
             )
 
