@@ -60,3 +60,16 @@ target/
 
 #Ipython Notebook
 .ipynb_checkpoints
+
+# Database access credentials
+*-config.json
+
+# Virtual environment
+venv
+
+# SQLite databases
+*.db
+
+# Text editor swap files
+.*.swp
+.*.swo
