@@ -15,6 +15,7 @@ from lock import lock_method
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 LOCK_FILENAME = '/tmp/resource-links-fetcher.lock'
 STREAM_CHUNK_SIZE = 1024
+MAX_FILE_LENGTH = 536870912  # 512 MB
 REQUEST_TIMEOUT = 5
 DATA_DIRECTORY = 'data'
 if not os.path.exists(DATA_DIRECTORY):
@@ -68,16 +69,31 @@ def main(overwrite, show_progress, *args, **kwargs):
             log_skip("Request error (%s)" % e, resource_id)
             continue
 
-        # Stream data to file
+        # Get the total expected size of the file
+        content_length = int(resp.headers['content-length']) \
+            if 'content-length' in resp.headers else None
+        if content_length is None:
+            log_skip("Response headers missing 'Content-Length'", resource_id)
+            continue
+        elif content_length > MAX_FILE_LENGTH:
+            log_skip("File is greater than the maximum file length", resource_id)
+            continue
+
         progress_desc = "Downloading resource %d / %d" % (resource_index, resource_count)
-        iterator = tqdm(
-            resp.iter_content(chunk_size=STREAM_CHUNK_SIZE),
+        progress_bar = tqdm(
+            total=content_length,
             disable=(not show_progress),
-            desc=progress_desc
+            desc=progress_desc,
+            unit='byte'
         )
+
+        # Stream data to file
         with open(dest_path, 'wb') as dest_file:
-            for block in iterator:
+            for block in resp.iter_content(chunk_size=STREAM_CHUNK_SIZE):
                 dest_file.write(block)
+                progress_bar.update(STREAM_CHUNK_SIZE)
+
+        progress_bar.close()
 
 
 def configure_parser(parser):
