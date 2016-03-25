@@ -89,9 +89,13 @@ def main(overwrite, show_progress, *args, **kwargs):
 
         # Stream data to file
         with open(dest_path, 'wb') as dest_file:
-            for block in resp.iter_content(chunk_size=STREAM_CHUNK_SIZE):
-                dest_file.write(block)
-                progress_bar.update(STREAM_CHUNK_SIZE)
+            try:
+                for block in resp.iter_content(chunk_size=STREAM_CHUNK_SIZE):
+                    dest_file.write(block)
+                    progress_bar.update(STREAM_CHUNK_SIZE)
+            except requests.exception.ConnectionError as e:
+                log_skip("Request error during streaming (%s)" % e, resource_id)
+                continue
 
         progress_bar.close()
 
